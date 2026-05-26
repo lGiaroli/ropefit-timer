@@ -19,6 +19,8 @@ export class SpeechManager {
       voice: voiceId,
       pitch: profile.pitch,
       rate: profile.rate,
+      volume: 1,
+      useApplicationAudioSession: false,
     });
   }
 

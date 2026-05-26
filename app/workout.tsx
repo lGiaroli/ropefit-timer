@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { router } from 'expo-router';
-import { StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
 import { AppScreen } from '@/components/ui/AppScreen';
 import { Button } from '@/components/ui/Button';
 import { StrengthFinisher } from '@/components/workout/StrengthFinisher';
@@ -13,7 +13,7 @@ import { useAppStore } from '@/store/AppStoreProvider';
 type WorkoutPhase = 'rope' | 'strength' | 'saving';
 
 export default function WorkoutScreen() {
-  const { config, settings, addHistory } = useAppStore();
+  const { config, settings, addHistory, isReady } = useAppStore();
   const [phase, setPhase] = useState<WorkoutPhase>('rope');
   const [ropeSummary, setRopeSummary] = useState<WorkoutRunSummary | null>(null);
 
@@ -43,6 +43,16 @@ export default function WorkoutScreen() {
       saveWorkout(summary, false);
     }
   };
+
+  if (!isReady) {
+    return (
+      <AppScreen scroll={false} contentStyle={styles.centered}>
+        <ActivityIndicator color={colors.lime} size="large" />
+        <Text style={styles.savingTitle}>Cargando configuración</Text>
+        <Text style={styles.savingText}>Preparando tu rutina exacta.</Text>
+      </AppScreen>
+    );
+  }
 
   if (phase === 'saving') {
     return (

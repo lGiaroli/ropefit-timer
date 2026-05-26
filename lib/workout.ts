@@ -1,4 +1,5 @@
 import { WorkoutConfig, WorkoutStep } from './types';
+import { formatDuration } from './format';
 
 export const DEFAULT_WORKOUT_CONFIG: WorkoutConfig = {
   id: 'ropefit-40',
@@ -79,12 +80,13 @@ export function generateJumpRopeWorkout(config: WorkoutConfig): WorkoutStep[] {
   ];
 
   if (config.warmupEnabled) {
+    const warmupDuration = formatSpeechDuration(config.warmupSeconds);
     steps.push({
       id: 'warmup',
       type: 'warmup',
       duration: config.warmupSeconds,
-      label: 'Calentamiento dinámico',
-      voiceCue: 'Calentamiento. Mové tobillos, hombros y empezá con saltos suaves.',
+      label: `Calentamiento ${formatDuration(config.warmupSeconds)}`,
+      voiceCue: `Calentamiento de ${warmupDuration}. Mové tobillos, hombros y empezá con saltos suaves.`,
       beepEnabled: true,
     });
   }
@@ -117,31 +119,49 @@ export function generateJumpRopeWorkout(config: WorkoutConfig): WorkoutStep[] {
     }
 
     if (block < config.blocks) {
+      const longRestDuration = formatSpeechDuration(config.longRestSeconds);
       steps.push({
         id: `b${block}-long-rest`,
         type: 'long_rest',
         duration: config.longRestSeconds,
-        label: 'Descanso de bloque: 1 minuto',
+        label: `Descanso de bloque: ${formatDuration(config.longRestSeconds)}`,
         blockNumber: block,
         roundNumber: config.roundsPerBlock,
-        voiceCue: 'Descanso de un minuto. Próximo bloque en breve.',
+        voiceCue: `Descanso de ${longRestDuration}. Próximo bloque en breve.`,
         beepEnabled: true,
       });
     }
   }
 
   if (config.cooldownEnabled) {
+    const cooldownDuration = formatSpeechDuration(config.cooldownSeconds);
     steps.push({
       id: 'cooldown',
       type: 'cooldown',
       duration: config.cooldownSeconds,
-      label: 'Cooldown',
-      voiceCue: 'Enfriamiento. Bajá pulsaciones, caminá suave y soltá gemelos.',
+      label: `Cooldown ${formatDuration(config.cooldownSeconds)}`,
+      voiceCue: `Enfriamiento de ${cooldownDuration}. Bajá pulsaciones, caminá suave y soltá gemelos.`,
       beepEnabled: true,
     });
   }
 
   return steps;
+}
+
+function formatSpeechDuration(totalSeconds: number) {
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+
+  if (minutes === 0) {
+    return `${seconds} segundos`;
+  }
+
+  if (seconds === 0) {
+    return minutes === 1 ? '1 minuto' : `${minutes} minutos`;
+  }
+
+  const minuteLabel = minutes === 1 ? '1 minuto' : `${minutes} minutos`;
+  return `${minuteLabel} y ${seconds} segundos`;
 }
 
 function buildJumpVoiceCue(config: WorkoutConfig, block: number, round: number) {

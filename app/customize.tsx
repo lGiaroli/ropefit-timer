@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { router } from 'expo-router';
-import { StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
 import Feather from '@expo/vector-icons/Feather';
 import { AppScreen } from '@/components/ui/AppScreen';
 import { Button } from '@/components/ui/Button';
@@ -10,12 +10,14 @@ import { WorkoutConfig } from '@/lib/types';
 import { useAppStore } from '@/store/AppStoreProvider';
 
 export default function CustomizeScreen() {
-  const { config, settings, updateConfig } = useAppStore();
+  const { config, settings, updateConfig, isReady } = useAppStore();
   const [draft, setDraft] = useState<WorkoutConfig>(config);
 
   useEffect(() => {
-    setDraft(config);
-  }, [config]);
+    if (isReady) {
+      setDraft(config);
+    }
+  }, [config, isReady]);
 
   const save = async () => {
     await updateConfig(draft);
@@ -26,6 +28,15 @@ export default function CustomizeScreen() {
     await updateConfig(draft);
     router.replace('/workout');
   };
+
+  if (!isReady) {
+    return (
+      <AppScreen scroll={false} contentStyle={styles.centered}>
+        <ActivityIndicator color={colors.lime} size="large" />
+        <Text style={styles.loadingTitle}>Cargando configuración</Text>
+      </AppScreen>
+    );
+  }
 
   return (
     <AppScreen contentStyle={styles.content}>
@@ -76,5 +87,16 @@ const styles = StyleSheet.create({
   },
   actions: {
     gap: spacing.sm,
+  },
+  centered: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.sm,
+  },
+  loadingTitle: {
+    color: colors.text,
+    fontSize: 20,
+    fontWeight: '900',
   },
 });

@@ -1,4 +1,4 @@
-import { Audio, AVPlaybackSource } from 'expo-av';
+import { Audio, AVPlaybackSource, InterruptionModeAndroid, InterruptionModeIOS } from 'expo-av';
 import * as Haptics from 'expo-haptics';
 import { Platform } from 'react-native';
 
@@ -14,9 +14,11 @@ async function ensureAudioMode() {
 
   await Audio.setAudioModeAsync({
     allowsRecordingIOS: false,
+    interruptionModeIOS: InterruptionModeIOS.DuckOthers,
     playsInSilentModeIOS: true,
     staysActiveInBackground: true,
-    shouldDuckAndroid: false,
+    interruptionModeAndroid: InterruptionModeAndroid.DuckOthers,
+    shouldDuckAndroid: true,
     playThroughEarpieceAndroid: false,
   });
   audioModeReady = true;

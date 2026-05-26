@@ -11,15 +11,17 @@ import { useAppStore } from '@/store/AppStoreProvider';
 import { getProgressionRecommendation } from '@/lib/progression';
 
 export default function HomeScreen() {
-  const { config, history, updateConfig } = useAppStore();
+  const { config, history, isReady } = useAppStore();
   const activeJumpTime = calculateActiveJumpTime(config);
   const restTime = calculateRestTime(config);
   const totalTime = calculateWorkoutDuration(config);
   const recommendation = getProgressionRecommendation(history, config);
+  const presetTitle = `${Math.round(activeJumpTime / 60)} min Jump Rope`;
+  const presetDescription = `${config.blocks} bloques · ${config.roundsPerBlock} rondas por bloque · ${config.jumpSeconds}s salto / ${config.shortRestSeconds}s descanso`;
 
-  const startWorkout = async () => {
-    if (config.progressionEnabled) {
-      await updateConfig(recommendation.nextConfig);
+  const startWorkout = () => {
+    if (!isReady) {
+      return;
     }
     router.push('/workout');
   };
@@ -37,8 +39,8 @@ export default function HomeScreen() {
       </View>
 
       <View style={styles.presetPanel}>
-        <Text style={styles.presetTitle}>40 min Jump Rope</Text>
-        <Text style={styles.presetDescription}>20 bloques · 6 rondas por bloque · 20s salto / 10s descanso</Text>
+        <Text style={styles.presetTitle}>{presetTitle}</Text>
+        <Text style={styles.presetDescription}>{presetDescription}</Text>
         <View style={styles.metricsRow}>
           <MetricCard label="Tiempo total" value={formatDuration(totalTime)} accent={colors.amber} />
           <MetricCard label="Real saltando" value={formatDuration(activeJumpTime)} accent={colors.lime} />
@@ -52,7 +54,7 @@ export default function HomeScreen() {
       <View style={styles.coachPanel}>
         <View style={styles.coachHeader}>
           <Text style={styles.coachTitle}>{recommendation.title}</Text>
-          <Text style={styles.coachMeta}>{config.progressionEnabled ? 'Progresión auto' : 'Manual'}</Text>
+          <Text style={styles.coachMeta}>{config.progressionEnabled ? 'Progresión sugerida' : 'Manual'}</Text>
         </View>
         <Text style={styles.coachText}>{recommendation.reason}</Text>
         <View style={styles.coachStats}>
@@ -62,7 +64,7 @@ export default function HomeScreen() {
       </View>
 
       <View style={styles.actionStack}>
-        <Button title="Start Workout" onPress={startWorkout} icon={<Feather name="play" size={20} color={colors.black} />} />
+        <Button title={isReady ? 'Start Workout' : 'Cargando'} onPress={startWorkout} disabled={!isReady} icon={<Feather name="play" size={20} color={colors.black} />} />
         <Button title="Customize" variant="secondary" onPress={() => router.push('/customize')} icon={<Feather name="sliders" size={19} color={colors.lime} />} />
         <Button title="Spotify Music" variant="secondary" onPress={() => router.push('/spotify')} icon={<Feather name="music" size={19} color={colors.spotify} />} />
         <Button title="Dashboard" variant="secondary" onPress={() => router.push('/dashboard')} icon={<Feather name="trending-up" size={19} color={colors.amber} />} />
