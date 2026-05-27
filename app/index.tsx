@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import { router } from 'expo-router';
 import { StyleSheet, Text, View } from 'react-native';
 import Feather from '@expo/vector-icons/Feather';
@@ -9,6 +10,7 @@ import { calculateActiveJumpTime, calculateRestTime, calculateWorkoutDuration } 
 import { formatDuration } from '@/lib/format';
 import { useAppStore } from '@/store/AppStoreProvider';
 import { getProgressionRecommendation } from '@/lib/progression';
+import { buildRpgProfile } from '@/lib/gamification';
 
 export default function HomeScreen() {
   const { config, history, isReady } = useAppStore();
@@ -16,6 +18,7 @@ export default function HomeScreen() {
   const restTime = calculateRestTime(config);
   const totalTime = calculateWorkoutDuration(config);
   const recommendation = getProgressionRecommendation(history, config);
+  const rpgProfile = useMemo(() => buildRpgProfile(history, config), [config, history]);
   const presetTitle = `${Math.round(activeJumpTime / 60)} min Jump Rope`;
   const presetDescription = `${config.blocks} bloques · ${config.roundsPerBlock} rondas por bloque · ${config.jumpSeconds}s salto / ${config.shortRestSeconds}s descanso`;
 
@@ -47,7 +50,7 @@ export default function HomeScreen() {
         </View>
         <View style={styles.metricsRow}>
           <MetricCard label="Descanso" value={formatDuration(restTime)} accent={colors.cyan} />
-          <MetricCard label="Historial" value={`${history.length} sesiones`} accent={colors.coral} />
+          <MetricCard label="Nivel RPG" value={`Lv ${rpgProfile.level}`} accent={colors.coral} />
         </View>
       </View>
 
@@ -66,6 +69,7 @@ export default function HomeScreen() {
       <View style={styles.actionStack}>
         <Button title={isReady ? 'Start Workout' : 'Cargando'} onPress={startWorkout} disabled={!isReady} icon={<Feather name="play" size={20} color={colors.black} />} />
         <Button title="Customize" variant="secondary" onPress={() => router.push('/customize')} icon={<Feather name="sliders" size={19} color={colors.lime} />} />
+        <Button title="Perfil RPG" variant="secondary" onPress={() => router.push('/profile')} icon={<Feather name="shield" size={19} color={colors.amber} />} />
         <Button title="Spotify Music" variant="secondary" onPress={() => router.push('/spotify')} icon={<Feather name="music" size={19} color={colors.spotify} />} />
         <Button title="Dashboard" variant="secondary" onPress={() => router.push('/dashboard')} icon={<Feather name="trending-up" size={19} color={colors.amber} />} />
         <Button title="History" variant="secondary" onPress={() => router.push('/history')} icon={<Feather name="bar-chart-2" size={19} color={colors.cyan} />} />

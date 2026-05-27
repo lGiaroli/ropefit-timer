@@ -22,6 +22,7 @@ export default function HistoryScreen() {
 
       <WorkoutHistory entries={history} />
 
+      <Button title="Abrir perfil RPG" variant="secondary" onPress={() => router.push('/profile')} icon={<Feather name="shield" size={19} color={colors.amber} />} />
       <Button title="Abrir dashboard" variant="secondary" onPress={() => router.push('/dashboard')} />
       {history.length > 0 ? <Button title="Borrar historial" variant="danger" onPress={clearHistory} /> : null}
     </AppScreen>

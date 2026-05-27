@@ -3,31 +3,26 @@ import { StyleSheet, Text, View } from 'react-native';
 import Feather from '@expo/vector-icons/Feather';
 import { AppScreen } from '@/components/ui/AppScreen';
 import { Button } from '@/components/ui/Button';
-import { ProgressDashboard } from '@/components/workout/ProgressDashboard';
+import { RpgProfile } from '@/components/profile/RpgProfile';
 import { colors, spacing } from '@/lib/theme';
-import { WorkoutConfig } from '@/lib/types';
 import { useAppStore } from '@/store/AppStoreProvider';
 
-export default function DashboardScreen() {
-  const { config, history, updateConfig } = useAppStore();
-
-  const applyRecommendation = async (nextConfig: WorkoutConfig) => {
-    await updateConfig(nextConfig);
-    router.push('/workout');
-  };
+export default function ProfileScreen() {
+  const { config, history } = useAppStore();
 
   return (
     <AppScreen contentStyle={styles.content}>
       <View style={styles.header}>
         <Button title="" variant="ghost" onPress={() => router.back()} icon={<Feather name="chevron-left" size={22} color={colors.text} />} style={styles.backButton} />
         <View style={styles.headerCopy}>
-          <Text style={styles.title}>Progress Dashboard</Text>
-          <Text style={styles.subtitle}>Progresión, racha, volumen semanal y consistencia.</Text>
+          <Text style={styles.title}>RPG Profile</Text>
+          <Text style={styles.subtitle}>XP, misiones, títulos y build atlética.</Text>
         </View>
       </View>
 
-      <Button title="Abrir perfil RPG" variant="secondary" onPress={() => router.push('/profile')} icon={<Feather name="shield" size={19} color={colors.amber} />} />
-      <ProgressDashboard history={history} config={config} onApplyRecommendation={applyRecommendation} />
+      <RpgProfile history={history} config={config} />
+
+      <Button title="Ver dashboard técnico" variant="secondary" onPress={() => router.push('/dashboard')} icon={<Feather name="bar-chart-2" size={19} color={colors.cyan} />} />
     </AppScreen>
   );
 }
