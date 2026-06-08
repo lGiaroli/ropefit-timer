@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { router } from 'expo-router';
 import * as AuthSession from 'expo-auth-session';
 import * as WebBrowser from 'expo-web-browser';
-import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, StyleSheet, Text, TextInput, View } from 'react-native';
 import Feather from '@expo/vector-icons/Feather';
 import { SpotifyTrackCard } from '@/components/spotify/SpotifyTrackCard';
 import { AppScreen } from '@/components/ui/AppScreen';
@@ -32,9 +32,11 @@ export default function SpotifyScreen() {
   const [loadingTracks, setLoadingTracks] = useState(false);
   const [playlistMessage, setPlaylistMessage] = useState<string | null>(null);
   const [authError, setAuthError] = useState<string | null>(null);
+  const [clientId, setClientId] = useState(SpotifyAuthService.getClientId());
+  const [clientIdDraft, setClientIdDraft] = useState(SpotifyAuthService.getClientId());
 
-  const clientId = SpotifyAuthService.getClientId();
   const redirectUri = SpotifyAuthService.getRedirectUri();
+  const productionRedirectUri = SpotifyAuthService.getProductionRedirectUri();
   const service = useMemo(() => new SpotifyRecommendationService(tokenSet?.accessToken), [tokenSet?.accessToken]);
 
   const [request, response, promptAsync] = AuthSession.useAuthRequest(
@@ -49,12 +51,21 @@ export default function SpotifyScreen() {
   );
 
   useEffect(() => {
+    SpotifyAuthService.loadClientId().then((storedClientId) => {
+      setClientId(storedClientId);
+      setClientIdDraft(storedClientId);
+    });
+
     SpotifyAuthService.loadTokenSet().then(async (storedToken) => {
       if (!storedToken) {
         return;
       }
       try {
-        const freshToken = storedToken.expiresAt - Date.now() < 60_000 ? await SpotifyAuthService.refreshAsync(storedToken) : storedToken;
+        const storedClientId = await SpotifyAuthService.loadClientId();
+        const freshToken =
+          storedToken.expiresAt - Date.now() < 60_000
+            ? await SpotifyAuthService.refreshAsync(storedToken, storedClientId)
+            : storedToken;
         setTokenSet(freshToken);
         updateSettings({ ...settings, spotifyConnected: true });
       } catch {
@@ -75,14 +86,24 @@ export default function SpotifyScreen() {
       return;
     }
 
-    SpotifyAuthService.exchangeCodeAsync(code, codeVerifier, redirectUri)
+    SpotifyAuthService.exchangeCodeAsync(code, codeVerifier, redirectUri, clientId)
       .then(async (nextTokenSet) => {
         setTokenSet(nextTokenSet);
         setAuthError(null);
         await updateSettings({ ...settings, spotifyConnected: true });
       })
-      .catch(() => setAuthError('Spotify rechazó el login. Revisá el Client ID y Redirect URI.'));
-  }, [redirectUri, request?.codeVerifier, response]);
+      .catch((error) => {
+        setAuthError(error instanceof Error ? error.message : 'Spotify rechazo el login. Revisa el Client ID y Redirect URI.');
+      });
+  }, [clientId, redirectUri, request?.codeVerifier, response]);
+
+  useEffect(() => {
+    if (response?.type !== 'error') {
+      return;
+    }
+
+    setAuthError(getAuthResponseError(response));
+  }, [response]);
 
   useEffect(() => {
     setLoadingTracks(true);
@@ -93,11 +114,24 @@ export default function SpotifyScreen() {
   }, [intensity, service]);
 
   const connect = async () => {
-    if (!clientId) {
-      setAuthError('Agregá EXPO_PUBLIC_SPOTIFY_CLIENT_ID para activar OAuth real. Mientras tanto, usás música mockeada.');
+    const cleanClientId = clientId.trim();
+    if (!cleanClientId) {
+      setAuthError('Pega tu Spotify Client ID y guardalo para activar OAuth real. Mientras tanto, usas musica mockeada.');
       return;
     }
+    setAuthError(null);
     await promptAsync();
+  };
+
+  const saveClientId = async () => {
+    const savedClientId = await SpotifyAuthService.saveClientId(clientIdDraft);
+    setClientId(savedClientId);
+    setClientIdDraft(savedClientId);
+    setAuthError(
+      savedClientId
+        ? 'Client ID guardado. Ahora agrega el Redirect URI exacto en Spotify y toca Login.'
+        : 'Client ID borrado. La pantalla vuelve a modo mock.',
+    );
   };
 
   const disconnect = async () => {
@@ -142,6 +176,51 @@ export default function SpotifyScreen() {
       </View>
 
       {authError ? <Text style={styles.error}>{authError}</Text> : null}
+
+      <View style={styles.setupPanel}>
+        <View style={styles.setupHeader}>
+          <View style={styles.setupCopy}>
+            <Text style={styles.setupTitle}>Spotify OAuth setup</Text>
+            <Text style={styles.setupText}>El login real necesita un Client ID y este Redirect URI exacto en Spotify Dashboard.</Text>
+          </View>
+          <View style={[styles.statusPill, clientId ? styles.statusReady : styles.statusMissing]}>
+            <Text style={styles.statusText}>{clientId ? 'Listo' : 'Falta ID'}</Text>
+          </View>
+        </View>
+
+        <TextInput
+          autoCapitalize="none"
+          autoCorrect={false}
+          inputMode="text"
+          onChangeText={setClientIdDraft}
+          placeholder="Spotify Client ID"
+          placeholderTextColor={colors.subtle}
+          style={styles.clientInput}
+          value={clientIdDraft}
+        />
+
+        <Button title="Guardar Client ID" variant="secondary" onPress={saveClientId} icon={<Feather name="save" size={17} color={colors.spotify} />} />
+
+        <View style={styles.uriBlock}>
+          <Text style={styles.uriLabel}>Redirect URI actual</Text>
+          <Text selectable style={styles.uriText}>
+            {redirectUri}
+          </Text>
+        </View>
+
+        {redirectUri !== productionRedirectUri ? (
+          <View style={styles.uriBlock}>
+            <Text style={styles.uriLabel}>Redirect URI para GitHub Pages</Text>
+            <Text selectable style={styles.uriText}>
+              {productionRedirectUri}
+            </Text>
+          </View>
+        ) : null}
+
+        <Text style={styles.setupHint}>
+          En Spotify Development Mode, tu usuario debe estar agregado en Users Management. Para pruebas locales nuevas, abri la app con 127.0.0.1, no localhost.
+        </Text>
+      </View>
 
       <View style={styles.stack}>
         <Text style={styles.label}>Intensidad · {range.min}-{range.max} BPM</Text>
@@ -280,4 +359,94 @@ const styles = StyleSheet.create({
     lineHeight: 18,
     fontWeight: '800',
   },
+  setupPanel: {
+    borderRadius: radii.sm,
+    borderWidth: 1,
+    borderColor: colors.borderStrong,
+    backgroundColor: colors.surfaceRaised,
+    padding: spacing.md,
+    gap: spacing.md,
+  },
+  setupHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    gap: spacing.md,
+  },
+  setupCopy: {
+    flex: 1,
+  },
+  setupTitle: {
+    color: colors.text,
+    fontSize: 17,
+    fontWeight: '900',
+  },
+  setupText: {
+    color: colors.muted,
+    fontSize: 12,
+    lineHeight: 18,
+    marginTop: 4,
+  },
+  statusPill: {
+    alignSelf: 'flex-start',
+    borderRadius: radii.pill,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+  },
+  statusReady: {
+    backgroundColor: colors.limeSoft,
+  },
+  statusMissing: {
+    backgroundColor: colors.coralSoft,
+  },
+  statusText: {
+    color: colors.text,
+    fontSize: 11,
+    fontWeight: '900',
+  },
+  clientInput: {
+    minHeight: 52,
+    borderRadius: radii.sm,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.backgroundSoft,
+    color: colors.text,
+    paddingHorizontal: spacing.md,
+    fontSize: 14,
+    fontWeight: '700',
+  },
+  uriBlock: {
+    borderRadius: radii.sm,
+    backgroundColor: colors.backgroundSoft,
+    borderWidth: 1,
+    borderColor: colors.border,
+    padding: spacing.md,
+    gap: spacing.xs,
+  },
+  uriLabel: {
+    color: colors.spotify,
+    fontSize: 11,
+    fontWeight: '900',
+    textTransform: 'uppercase',
+  },
+  uriText: {
+    color: colors.text,
+    fontSize: 12,
+    lineHeight: 18,
+    fontWeight: '700',
+  },
+  setupHint: {
+    color: colors.muted,
+    fontSize: 12,
+    lineHeight: 18,
+  },
 });
+
+function getAuthResponseError(response: AuthSession.AuthSessionResult) {
+  if (response.type !== 'error') {
+    return 'Spotify rechazo el login.';
+  }
+
+  const params = response.params ?? {};
+  const detail = [response.error?.code, response.error?.description, params.error, params.error_description].filter(Boolean).join(': ');
+  return detail || 'Spotify rechazo el login. Revisa el Client ID, Redirect URI y permisos del usuario.';
+}

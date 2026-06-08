@@ -33,19 +33,27 @@ The app works without Spotify credentials by using mock tracks tagged by BPM.
 To enable real OAuth PKCE:
 
 1. Create a Spotify app in the Spotify Developer Dashboard.
-2. Add this redirect URI to the app:
+2. Add these redirect URIs to the app as needed:
 
    ```text
+   https://lgiaroli.github.io/ropefit-timer/spotify-auth
+   http://127.0.0.1:8081/spotify-auth
    ropefit://spotify-auth
    ```
 
-3. Create a local `.env` file:
+   Spotify requires an exact redirect URI match. For local web testing, open Expo with `127.0.0.1` instead of `localhost`.
+
+3. Create a local `.env` file or paste the Client ID directly in the Spotify screen:
 
    ```bash
    EXPO_PUBLIC_SPOTIFY_CLIENT_ID=your_spotify_client_id
    ```
 
-4. Restart Expo.
+4. Restart Expo if you changed `.env`.
+
+5. For the published GitHub Pages build, either paste the Client ID in the app's Spotify screen or add a GitHub repository variable named `EXPO_PUBLIC_SPOTIFY_CLIENT_ID` and redeploy.
+
+6. If your Spotify app is in Development Mode, add your Spotify account in Users Management. Spotify requires the app owner to have Premium in Development Mode, and playback control requires a Premium account.
 
 Spotify Web API is used only for user authorization, playlists, top/saved tracks, playlist creation, and playback control. The app does not download music, store audio, modify artwork, or use Spotify content to train models. If Spotify does not provide BPM for a track, the UI falls back to mock/manual BPM messaging.
 
