@@ -49,7 +49,7 @@ const styles = StyleSheet.create({
     borderColor: colors.lime,
   },
   secondary: {
-    backgroundColor: colors.surfaceRaised,
+    backgroundColor: colors.surfaceLifted,
     borderColor: colors.border,
   },
   ghost: {

@@ -46,6 +46,12 @@ export function RpgProfile({ history, config }: RpgProfileProps) {
             <View style={[styles.xpFill, { width: levelPercent }]} />
           </View>
         </View>
+
+        <View style={styles.heroFooter}>
+          <HeroMiniStat label="Sesiones" value={`${profile.totalSessions}`} />
+          <HeroMiniStat label="Semana" value={formatDuration(profile.weeklyJumpSeconds)} />
+          <HeroMiniStat label="Títulos" value={`${unlockedBadges}/${profile.badges.length}`} />
+        </View>
       </View>
 
       <View style={styles.grid}>
@@ -107,6 +113,15 @@ export function RpgProfile({ history, config }: RpgProfileProps) {
           ))}
         </View>
       </View>
+    </View>
+  );
+}
+
+function HeroMiniStat({ label, value }: { label: string; value: string }) {
+  return (
+    <View style={styles.heroMiniStat}>
+      <Text style={styles.heroMiniValue}>{value}</Text>
+      <Text style={styles.heroMiniLabel}>{label}</Text>
     </View>
   );
 }
@@ -187,7 +202,7 @@ const styles = StyleSheet.create({
   hero: {
     borderRadius: radii.sm,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: colors.borderStrong,
     backgroundColor: colors.surface,
     padding: spacing.lg,
     gap: spacing.lg,
@@ -228,7 +243,7 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   levelPlate: {
-    width: 58,
+    width: 62,
     minHeight: 68,
     borderRadius: radii.sm,
     borderWidth: 1,
@@ -277,6 +292,27 @@ const styles = StyleSheet.create({
     borderRadius: radii.pill,
     backgroundColor: colors.lime,
   },
+  heroFooter: {
+    flexDirection: 'row',
+    borderTopWidth: 1,
+    borderColor: colors.border,
+    paddingTop: spacing.md,
+    gap: spacing.md,
+  },
+  heroMiniStat: {
+    flex: 1,
+    minWidth: 0,
+  },
+  heroMiniValue: {
+    color: colors.text,
+    fontSize: 17,
+    fontWeight: '900',
+  },
+  heroMiniLabel: {
+    color: colors.muted,
+    fontSize: 11,
+    fontWeight: '800',
+  },
   grid: {
     flexDirection: 'row',
     gap: spacing.sm,
@@ -284,7 +320,7 @@ const styles = StyleSheet.create({
   rewardPanel: {
     borderRadius: radii.sm,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: colors.borderStrong,
     backgroundColor: colors.surface,
     padding: spacing.md,
     gap: spacing.md,
@@ -334,7 +370,7 @@ const styles = StyleSheet.create({
   section: {
     borderRadius: radii.sm,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: colors.borderStrong,
     backgroundColor: colors.surface,
     padding: spacing.md,
     gap: spacing.md,
@@ -380,7 +416,7 @@ const styles = StyleSheet.create({
     borderRadius: radii.sm,
     borderWidth: 1,
     borderColor: colors.border,
-    backgroundColor: colors.surfaceRaised,
+    backgroundColor: colors.backgroundSoft,
     padding: spacing.md,
   },
   missionDone: {

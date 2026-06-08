@@ -27,6 +27,8 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
     padding: spacing.md,
     gap: spacing.xs,
+    minHeight: 92,
+    justifyContent: 'space-between',
   },
   accent: {
     width: 28,
